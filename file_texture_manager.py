@@ -111,8 +111,14 @@ def get_project_path():
 # example:
 #   execfile('/Users/tmeade/Documents/python/maya/tools/file_texture_manager.py')
 if __name__ == "__main__":
-    file_texture_nodes = ftm.get_file_textures()
+    # Get a list of all file texture nodes
+    file_texture_nodes = get_file_textures()
 
+    # Build a list of dictionary that each contain attribte:value pairs on each node.
     file_texture_attributes = list()
     for node in file_texture_nodes:
-        file_texture_attributes.append(ftm.get_file_texture_attributes(node))
+        file_texture_attributes.append(get_file_texture_attributes(node))
+
+    # Validate the file path on each node.  I suggest taking the file_texture_attributes
+    # list and adding a 'file_exists' attribute to the dict and setting it True or False.
+    # file_exist(file_texture_attributes)
