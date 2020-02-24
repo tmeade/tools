@@ -6,13 +6,41 @@ import os.shutil
 import logging
 import maya.cmds as mc
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-### Get all file textures (TOM)
-# mc.ls(type='fileTexture')
 
-### get path (TOM)
-# getAttr(<node>.imageName)
+def get_file_textures():
+    '''
+    Description:
+        Gets all file textures in a Maya scene
+    Parameters: None
+    Returns:
+        list: A list of all file testures.
+    '''
+    return mc.ls(type='file')
+
+
+# TODO: Create object to store attributes
+def get_file_texture_attributes(file_node):
+    '''
+    Description:
+        Gets node and file name from file node.
+    Parameters:
+        file_node (string): Name of the file node
+    Returns:
+        dict: A dictionary of atttribtue name and value pairs ({attr:value})
+    '''
+    # TODO: Check file_node type and assert if not type fileNode
+
+    # Create dictionary of attributes from the maya file node
+    file_texture_attribues = dict({
+                            'name': file_node,
+                            'file_texture_name': mc.getAttr('{}.fileTextureName'.format(file_node))
+                            })
+
+    # Possibly add other useful data such as connections to other nodes
+
+    return file_texture_attribues
 
 ### validate file path (does texture file exist?)  (Ryan)
 #import os.path
