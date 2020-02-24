@@ -6,6 +6,8 @@ import os.shutil
 import logging
 import maya.cmds as mc
 
+logger = logging.getLogger(__name__)
+
 ### Get all file textures (TOM)
 # mc.ls(type='fileTexture')
 
