@@ -107,6 +107,54 @@ def get_project_path():
     return project_path
 
 
+#Ji
+def warn_copy():
+    '''
+    Description:
+        Warn the possible huge folder capacity.
+    Parameters:
+        None
+    Returns:
+        string(Yes/No)
+    '''
+    answer = mc.confirmDialog(title='Confirm Copying Files',
+                    message='Please, check your memory capacity is enough for files.\nDo you want to proceed?',
+                    button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+    return answer
+
+def copy_texture(source, destination):
+    '''
+    Description:
+        Copy textures to the destination.
+    Parameters:
+        source is the file path
+        destination is the folder path
+    Returns:
+        dict: A dictionary of file name and destination folder
+    '''
+    if destination is None:
+        project_path = get_project_path()
+        destination = '{}sourceimages'.format(project_path)
+        src_path_exist = os.path.isdir(src_path)
+
+        if src_path_exist == True:
+            shutil.copy(source, destination)
+        else:
+            os.mkdir(src_path)
+            shutil.copy(source, destination)
+            logging.info('The path has been created : {}'.format(src_path))
+    else:
+        path_exist = os.path.isdir(destination)
+        if path_exist == True:
+            shutil.copy(source, destination)
+        else:
+            logging.info('The path doesn\'s exist : {}'.format(destination))
+
+    file_name = os.path.basename(source)
+    copy_texture_attribues = dict({'name': file_name,
+                                    'copied path': destination})
+
+
 # Test code to run when calling module
 # example:
 #   execfile('/Users/tmeade/Documents/python/maya/tools/file_texture_manager.py')
