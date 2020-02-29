@@ -39,38 +39,16 @@ def get_file_texture_attributes(file_node):
     # Create dictionary of attributes from the maya file node
     file_texture_attribues = dict({
                             'name': file_node,
-                            'file_texture_name': mc.getAttr('{}.fileTextureName'.format(file_node))
+                            'file_texture_name': mc.getAttr('{}.fileTextureName'.format(file_node)),
+                            'file_exists': False,
+                            'new_file_path': None,
+                            'needs_move': False
                             })
 
     # TODO: Possibly add other useful data such as connections to other nodes
     logging.debug('file_texture_attribues: {}'.format(file_texture_attribues))
 
     return file_texture_attribues
-
-### validate file path (does texture file exist?)  (Ryan)
-#import os.path
-#os.path.isfile(fname)
-
-### get current project (Ryan)
-#mc.file() ??
-
-### warn before copy files (Ji)
-
-### copy files os.shutil.copy(source, dest) (Ji)
-
-### update paths on texture nodes (mike)
-# sourceimages/fileName.tga
-# directory = "Z:/temp"
-# dirs = os.listdir(directory)
-# os.listdir(os.path.join(directory, dirs[0]))
-#
-# sid = 'sourceImages'
-# path = 'z:/temp/sourceImages'
-#
-# if sid in path:
-#     print path
-
-### print out log of all edits (mike)
 
 # Ryan
 def is_file_append(path, exist_list, lost_list):
@@ -155,6 +133,20 @@ def copy_texture(source, destination):
                                     'copied path': destination})
 
 
+### update paths on texture nodes (mike)
+# sourceimages/fileName.tga
+# directory = "Z:/temp"
+# dirs = os.listdir(directory)
+# os.listdir(os.path.join(directory, dirs[0]))
+#
+# sid = 'sourceImages'
+# path = 'z:/temp/sourceImages'
+#
+# if sid in path:
+#     print path
+
+### print out log of all edits (mike)
+
 # Test code to run when calling module
 # example:
 #   execfile('/Users/tmeade/Documents/python/maya/tools/file_texture_manager.py')
@@ -170,3 +162,12 @@ if __name__ == "__main__":
     # Validate the file path on each node.  I suggest taking the file_texture_attributes
     # list and adding a 'file_exists' attribute to the dict and setting it True or False.
     # file_exist(file_texture_attributes)
+    # file_exists(dict)
+    # if exists, set file_exists attr to True
+    #
+    # is_in_sourceImages()
+    # # check that it IS in the project's sourceImages dir
+    # # check the path and if absolute, set new_file_path to relative
+    #
+    # not_in_sourceImages()
+    # # Set needs_moved
