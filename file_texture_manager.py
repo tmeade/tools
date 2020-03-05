@@ -9,6 +9,7 @@ import maya.cmds as mc
 logger = logging.getLogger(__name__)
 
 
+# Thomas
 def get_file_textures():
     '''
     Description:
@@ -29,15 +30,15 @@ def get_file_texture_attributes(file_node):
     Description:
         Gets node and file name from file node.
     Parameters:
-        file_node (string): Name of the file node
+        file_node (string): Name of the file node.
     Returns:
-        dict: A dictionary of atttribtue name and value pairs ({attr:value})
+        dict: A dictionary of atttribtue name and value pairs ({attr:value}).
     '''
     logging.debug('file_node: {}'.format(file_node))
     # TODO: Check file_node type and assert if not type fileNode
 
     # Create dictionary of attributes from the maya file node
-    file_texture_attribues = dict({
+    file_texture_attributes = dict({
                             'name': file_node,
                             'file_texture_name': mc.getAttr('{}.fileTextureName'.format(file_node)),
                             'file_exists': False,
@@ -46,40 +47,62 @@ def get_file_texture_attributes(file_node):
                             })
 
     # TODO: Possibly add other useful data such as connections to other nodes
-    logging.debug('file_texture_attribues: {}'.format(file_texture_attribues))
+    logging.debug('file_texture_attributes: {}'.format(file_texture_attributes))
 
-    return file_texture_attribues
+    return file_texture_attributes
+
 
 # Ryan
-def is_file_append(path, exist_list, lost_list):
+def validate_path_location(dict_attr):
     '''
-    validate if a single path exists and append it to a list
+    Description:
+        validate if the file is relatively in sourceimages folder.
+    Parameters:
+        dict_attr (dict): file_texture_attributes.
+    Returns:
+        dict: A dictionary of atttribtue name and value pairs ({attr:value}).
     '''
-    if os.path.isfile(path):
-        exist_list.append(path)
-        return True
-    else:
-        lost_list.append(path)
-        return False
+    path = dict_attr['file_texture_name']
+    file_name = os.path.basename(path)
+    path_relative = 'sourceimages\\{}'.format(file_name)
+    path_absolute = '\\{}'.format(path_relative)
 
-def file_exist(paths):
+    # if the path is not relative
+    if path is not path_relative:
+        dict_attr['new_file_path'] = path_relative
+        # if the file is not in sourceimages
+        if path_absolute not in path:
+            dict_attr['needs_move'] = True
+    logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'], dict_attr['needs_move']))
+    return dict_attr
+
+def validate_path_exist(dict_attr):
     '''
-    validate input file paths
+    Description:
+        validate if a single path exists and update dict_attr.
+    Parameters:
+        dict_attr (dict): file_texture_attributes.
+    Returns:
+        boolean: file exists or does not exist.
     '''
-    paths_exist = list()
-    paths_lost = list()
-    # if multiple paths in a list
-    if isinstance(paths, list):
-        for path in paths:
-            is_file_append(path, paths_exist, paths_lost)
-    # if it is a single path
+    # query the path from the dict
+    path = dict_attr['file_texture_name']
+    # if the path exists, update dict_attr
+    if os.path.isfile(path):
+        dict_attr['file_exists'] = True
     else:
-        is_file_append(path, paths_exist, paths_lost)
-    return (paths_exist, paths_lost)
+        dict_attr['file_exists'] = False
+    logging.debug('{}\nfile_exists: {}'.format(path, dict_attr['file_exists']))
+    return dict_attr['file_exists']
 
 def get_project_path():
     '''
-    return current project path
+    Description:
+        get current project path
+    Parameters:
+        None
+    Returns:
+        string: current project path
     '''
     project_path = mc.workspace(query=True, rootDirectory=True)
     return project_path
