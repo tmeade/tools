@@ -100,37 +100,45 @@ def warn_copy():
                     button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
 
-def copy_texture(source, destination):
+def copy_texture(source):
     '''
     Description:
         Copy textures to the destination.
     Parameters:
-        source is the file path
-        destination is the folder path
+        source is the class object dictionary
     Returns:
-        dict: A dictionary of file name and destination folder
+        dict: Update Information on dictionary
     '''
-    if destination is None:
-        project_path = get_project_path()
-        destination = '{}sourceimages'.format(project_path)
-        src_path_exist = os.path.isdir(src_path)
+    file_texture_attribues = source
 
-        if src_path_exist == True:
-            shutil.copy(source, destination)
-        else:
-            os.mkdir(src_path)
-            shutil.copy(source, destination)
-            logging.info('The path has been created : {}'.format(src_path))
+    file_name = file_texture_attribues['name']
+    file_path = file_texture_attribues['file_texture_name']
+    file_existance = file_texture_attribues['file_exists']
+    new_destination = file_texture_attribues['new_file_path']
+    needs_move = file_texture_attribues['needs_move']
+
+    if file_existance == 'False':
+        logging.info('The file has been lost. : {}'.format(file_name))
     else:
-        path_exist = os.path.isdir(destination)
-        if path_exist == True:
-            shutil.copy(source, destination)
+        #If the file exists, and has relative path.
+        if new_destination is None:
+            logging.info('The file already exists. : {}'.format(file_name))
         else:
-            logging.info('The path doesn\'s exist : {}'.format(destination))
+            dirname = os.path.dirname(new_destination)
+            path_exist = os.path.isdir(dirname)
 
-    file_name = os.path.basename(source)
-    copy_texture_attribues = dict({'name': file_name,
-                                    'copied path': destination})
+            #If the new path is not valid.
+            if path_exist == False:
+                logging.info('The new file path doesn\'t exist. : {}.'.format(new_destination))
+
+            else:
+                #If the file exists, but it has absolute path.
+                if needs_move is False:
+                    logging.info('The file already exists. : {}.'.format(file_name))
+                #If the file exists, and needs to be copied.
+                else:
+                    shutil.copy(file_path, new_destination)
+                    logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
 
 
 ### update paths on texture nodes (mike)
