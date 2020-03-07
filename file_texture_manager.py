@@ -64,8 +64,8 @@ def validate_path_location(dict_attr):
     '''
     path = dict_attr['file_texture_name']
     file_name = os.path.basename(path)
-    path_relative = 'sourceimages\\{}'.format(file_name)
-    path_absolute = '\\{}'.format(path_relative)
+    path_relative = 'sourceimages/{}'.format(file_name)
+    path_absolute = '/{}'.format(path_relative)
 
     # if the path is not relative
     if path is not path_relative:
@@ -74,6 +74,7 @@ def validate_path_location(dict_attr):
         if path_absolute not in path:
             dict_attr['needs_move'] = True
     logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'], dict_attr['needs_move']))
+
     return dict_attr
 
 def validate_path_exist(dict_attr):
@@ -93,7 +94,8 @@ def validate_path_exist(dict_attr):
     else:
         dict_attr['file_exists'] = False
     logging.debug('{}\nfile_exists: {}'.format(path, dict_attr['file_exists']))
-    return dict_attr['file_exists']
+
+    return dict_attr
 
 def get_project_path():
     '''
@@ -123,16 +125,16 @@ def warn_copy():
                     button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
 
-def copy_texture(source):
+def copy_texture(dict_attr):
     '''
     Description:
         Copy textures to the destination.
     Parameters:
-        source is the class object dictionary
+        dict_attr is the class object dictionary
     Returns:
         dict: Update Information on dictionary
     '''
-    file_texture_attribues = source
+    file_texture_attribues = dict_attr
 
     file_name = file_texture_attribues['name']
     file_path = file_texture_attribues['file_texture_name']
@@ -140,65 +142,87 @@ def copy_texture(source):
     new_destination = file_texture_attribues['new_file_path']
     needs_move = file_texture_attribues['needs_move']
 
-    if file_existance == 'False':
+    if file_existance == False:
+        logging.debug('The file has been lost. : {}'.format(file_name))
+        return
+
+    #If the file has relative path.
+    if new_destination is None:
+        logging.debug('The file already exists. : {}'.format(file_name))
+        return
+
+    #If the file exists, but it has absolute path.
+    if needs_move is False:
+        logging.info('The file already exists. : {}.'.format(file_name))
+        return
+
+    #If the file exists, and needs to be copied.
+    new_destination = '{}/{}'.format(get_project_path(), new_destination)
+    logging.debug('The file will be copied to the new_destination: {}.'.format(new_destination))
+    shutil.copy(file_path, new_destination)
+    logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
+
+def update_node_path(dict_attr):
+    file_texture_attribues = dict_attr
+
+    file_name = file_texture_attribues['name']
+    file_existance = file_texture_attribues['file_exists']
+    new_destination = file_texture_attribues['new_file_path']
+
+    if file_existance == False:
         logging.info('The file has been lost. : {}'.format(file_name))
-    else:
-        #If the file exists, and has relative path.
-        if new_destination is None:
-            logging.info('The file already exists. : {}'.format(file_name))
-        else:
-            dirname = os.path.dirname(new_destination)
-            path_exist = os.path.isdir(dirname)
+        return
 
-            #If the new path is not valid.
-            if path_exist == False:
-                logging.info('The new file path doesn\'t exist. : {}.'.format(new_destination))
+    #If the file has relative path.
+    if new_destination is None:
+        logging.info('The file already exists. : {}'.format(file_name))
+        return
 
-            else:
-                #If the file exists, but it has absolute path.
-                if needs_move is False:
-                    logging.info('The file already exists. : {}.'.format(file_name))
-                #If the file exists, and needs to be copied.
-                else:
-                    shutil.copy(file_path, new_destination)
-                    logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
+    mc.setAttr('{}.{}'.format(file_name, 'fileTextureName'), new_destination, type='string')
 
+    return new_destination
 
-### update paths on texture nodes (mike)
-# sourceimages/fileName.tga
-# directory = "Z:/temp"
-# dirs = os.listdir(directory)
-# os.listdir(os.path.join(directory, dirs[0]))
-#
-# sid = 'sourceImages'
-# path = 'z:/temp/sourceImages'
-#
-# if sid in path:
-#     print path
+def log_summary(dict_attr):
+    if dict_attr['needs_move'] is True:
+        logger.info('File {} was COPIED to {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
 
-### print out log of all edits (mike)
+    if dict_attr['file_exist'] is False:
+        logger.info('File {} in node {} was not found.'.format(dict_attr['file_texture_name'], dict_attr['name']))
+
+    if dict_attr['new_file_path'] is not None:
+        logger.info('File {} has been updated to use a relative path: {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
+
 
 # Test code to run when calling module
 # example:
 #   execfile('/Users/tmeade/Documents/python/maya/tools/file_texture_manager.py')
 if __name__ == "__main__":
     # Get a list of all file texture nodes
-    file_texture_nodes = get_file_textures()
+    file_texture_nodes = ftm.get_file_textures()
 
     # Build a list of dictionary that each contain attribte:value pairs on each node.
     file_texture_attributes = list()
     for node in file_texture_nodes:
-        file_texture_attributes.append(get_file_texture_attributes(node))
+        file_texture_attributes.append(ftm.get_file_texture_attributes(node))
 
-    # Validate the file path on each node.  I suggest taking the file_texture_attributes
-    # list and adding a 'file_exists' attribute to the dict and setting it True or False.
-    # file_exist(file_texture_attributes)
-    # file_exists(dict)
-    # if exists, set file_exists attr to True
-    #
-    # is_in_sourceImages()
-    # # check that it IS in the project's sourceImages dir
-    # # check the path and if absolute, set new_file_path to relative
-    #
-    # not_in_sourceImages()
-    # # Set needs_moved
+    validated_attributes = list()
+    for attributes in file_texture_attributes:
+        ftm.validate_path_location(attributes)
+        validated_attributes.append(ftm.validate_path_exist(attributes))
+
+    files_to_copy = list()
+    for attributes in validated_attributes:
+        if attributes['needs_move'] is True:
+            files_to_copy.append(attributes)
+
+    if files_to_copy:
+        ftm.warn_copy()
+
+    for attributes in files_to_copy:
+        ftm.copy_texture(attributes)
+
+    for attributes in validated_attributes:
+        ftm.update_node_path(attributes)
+
+    for attributes in :
+        ftm.log_summary(attributes)
