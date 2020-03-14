@@ -10,6 +10,44 @@ logger = logging.getLogger(__name__)
 
 
 # Thomas
+class MayaNode(object):
+    def __init__(self, node=None):
+        if node:
+            self.node = node
+            self.get_attributes(node)
+            self.data = self.__dict__
+
+    def __repr__(self):
+        return "MayaNode('{}')".format(self.node)
+
+    def __str__(self):
+        return str(self.data)
+
+    def get_attributes(self, node):
+        for attribute in mc.listAttr(node, hasData=True):
+            try:
+                value = mc.getAttr('{}.{}'.format(node, attribute))
+                setattr(self, attribute, value)
+            except:
+                pass
+
+    def set_maya_attribute(self, attr=None, value=None):
+        if attr:
+            mc.setAttr(attr, value)
+        else:
+            for k, v in self.data.items():
+                mc.setAttr(k, v)
+
+
+
+class FileNode(MayaNode):
+    def __init__(self, node=None):
+        super(FileNode, self).__init__(node)
+        self.file_exists = False
+        self.needs_move = False
+        self.new_file_path = None
+
+
 def get_file_textures():
     '''
     Description:
@@ -73,9 +111,11 @@ def validate_path_location(dict_attr):
         # if the file is not in sourceimages
         if path_absolute not in path:
             dict_attr['needs_move'] = True
-    logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'], dict_attr['needs_move']))
+    logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'],
+                    dict_attr['needs_move']))
 
     return dict_attr
+
 
 def validate_path_exist(dict_attr):
     '''
@@ -97,6 +137,7 @@ def validate_path_exist(dict_attr):
 
     return dict_attr
 
+
 def get_project_path():
     '''
     Description:
@@ -110,7 +151,7 @@ def get_project_path():
     return project_path
 
 
-#Ji
+# Ji
 def warn_copy():
     '''
     Description:
@@ -121,9 +162,10 @@ def warn_copy():
         string(Yes/No)
     '''
     answer = mc.confirmDialog(title='Confirm Copying Files',
-                    message='Please, check your memory capacity is enough for files.\nDo you want to proceed?',
-                    button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+        message='Please, check your memory capacity is enough for files.\nDo you want to proceed?',
+        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
+
 
 def copy_texture(dict_attr):
     '''
@@ -151,16 +193,19 @@ def copy_texture(dict_attr):
         logging.debug('The file already exists. : {}'.format(file_name))
         return
 
+
     #If the file exists, but it has absolute path.
     if needs_move is False:
         logging.info('The file already exists. : {}.'.format(file_name))
         return
+
 
     #If the file exists, and needs to be copied.
     new_destination = '{}/{}'.format(get_project_path(), new_destination)
     logging.debug('The file will be copied to the new_destination: {}.'.format(new_destination))
     shutil.copy(file_path, new_destination)
     logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
+
 
 def update_node_path(dict_attr):
     file_texture_attribues = dict_attr
@@ -203,7 +248,7 @@ if __name__ == "__main__":
     # Build a list of dictionary that each contain attribte:value pairs on each node.
     file_texture_attributes = list()
     for node in file_texture_nodes:
-        file_texture_attributes.append(ftm.get_file_texture_attributes(node))
+        file_texture_attributes.append(ftm.FileNode(node))
 
     validated_attributes = list()
     for attributes in file_texture_attributes:
