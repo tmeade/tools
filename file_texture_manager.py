@@ -39,13 +39,110 @@ class MayaNode(object):
                 mc.setAttr(k, v)
 
 
-
 class FileNode(MayaNode):
     def __init__(self, node=None):
         super(FileNode, self).__init__(node)
         self.file_exists = False
         self.needs_move = False
         self.new_file_path = None
+
+    # Ryan
+    def validate_path_location(dict_attr):
+        '''
+        Description:
+            validate if the file is relatively in sourceimages folder.
+        Parameters:
+            dict_attr (dict): file_texture_attributes.
+        Returns:
+            dict: A dictionary of atttribtue name and value pairs ({attr:value}).
+        '''
+        path = dict_attr['file_texture_name']
+        file_name = os.path.basename(path)
+        path_relative = 'sourceimages/{}'.format(file_name)
+        path_absolute = '/{}'.format(path_relative)
+
+        # if the path is not relative
+        if path is not path_relative:
+            dict_attr['new_file_path'] = path_relative
+            # if the file is not in sourceimages
+            if path_absolute not in path:
+                dict_attr['needs_move'] = True
+        logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'],
+                        dict_attr['needs_move']))
+
+        return dict_attr
+
+    # Ryan
+    def validate_path_exist(dict_attr):
+        '''
+        Description:
+            validate if a single path exists and update dict_attr.
+        Parameters:
+            dict_attr (dict): file_texture_attributes.
+        Returns:
+            boolean: file exists or does not exist.
+        '''
+        # query the path from the dict
+        path = dict_attr['file_texture_name']
+        # if the path exists, update dict_attr
+        if os.path.isfile(path):
+            dict_attr['file_exists'] = True
+        else:
+            dict_attr['file_exists'] = False
+        logging.debug('{}\nfile_exists: {}'.format(path, dict_attr['file_exists']))
+
+        return dict_attr
+
+    # Ji
+    def copy_texture(dict_attr):
+        '''
+        Description:
+            Copy textures to the destination.
+        Parameters:
+            dict_attr is the class object dictionary
+        Returns:
+            dict: Update Information on dictionary
+        '''
+        file_texture_attribues = dict_attr
+
+        file_name = file_texture_attribues['name']
+        file_path = file_texture_attribues['file_texture_name']
+        file_existance = file_texture_attribues['file_exists']
+        new_destination = file_texture_attribues['new_file_path']
+        needs_move = file_texture_attribues['needs_move']
+
+        if file_existance is False:
+            logging.debug('The file has been lost. : {}'.format(file_name))
+            return
+
+        # If the file has relative path.
+        if new_destination is None:
+            logging.debug('The file already exists. : {}'.format(file_name))
+            return
+
+        mc.setAttr('{}.{}'.format(file_name, 'fileTextureName'), new_destination, type='string')
+
+        # If the file exists, but it has absolute path.
+        if needs_move is False:
+            logging.info('The file already exists. : {}.'.format(file_name))
+            return
+
+        # If the file exists, and needs to be copied.
+        new_destination = '{}/{}'.format(get_project_path(), new_destination)
+        logging.debug('The file will be copied to the new_destination: {}.'.format(new_destination))
+        shutil.copy(file_path, new_destination)
+        logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
+
+# Mike
+def log_summary(dict_attr):
+    if dict_attr['needs_move'] is True:
+        logger.info('File {} was COPIED to {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
+
+    if dict_attr['file_exist'] is False:
+        logger.info('File {} in node {} was not found.'.format(dict_attr['file_texture_name'], dict_attr['name']))
+
+    if dict_attr['new_file_path'] is not None:
+        logger.info('File {} has been updated to use a relative path: {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
 
 
 def get_file_textures():
@@ -90,68 +187,6 @@ def get_file_texture_attributes(file_node):
     return file_texture_attributes
 
 
-# Ryan
-def validate_path_location(dict_attr):
-    '''
-    Description:
-        validate if the file is relatively in sourceimages folder.
-    Parameters:
-        dict_attr (dict): file_texture_attributes.
-    Returns:
-        dict: A dictionary of atttribtue name and value pairs ({attr:value}).
-    '''
-    path = dict_attr['file_texture_name']
-    file_name = os.path.basename(path)
-    path_relative = 'sourceimages/{}'.format(file_name)
-    path_absolute = '/{}'.format(path_relative)
-
-    # if the path is not relative
-    if path is not path_relative:
-        dict_attr['new_file_path'] = path_relative
-        # if the file is not in sourceimages
-        if path_absolute not in path:
-            dict_attr['needs_move'] = True
-    logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'],
-                    dict_attr['needs_move']))
-
-    return dict_attr
-
-
-def validate_path_exist(dict_attr):
-    '''
-    Description:
-        validate if a single path exists and update dict_attr.
-    Parameters:
-        dict_attr (dict): file_texture_attributes.
-    Returns:
-        boolean: file exists or does not exist.
-    '''
-    # query the path from the dict
-    path = dict_attr['file_texture_name']
-    # if the path exists, update dict_attr
-    if os.path.isfile(path):
-        dict_attr['file_exists'] = True
-    else:
-        dict_attr['file_exists'] = False
-    logging.debug('{}\nfile_exists: {}'.format(path, dict_attr['file_exists']))
-
-    return dict_attr
-
-
-def get_project_path():
-    '''
-    Description:
-        get current project path
-    Parameters:
-        None
-    Returns:
-        string: current project path
-    '''
-    project_path = mc.workspace(query=True, rootDirectory=True)
-    return project_path
-
-
-# Ji
 def warn_copy():
     '''
     Description:
@@ -166,77 +201,17 @@ def warn_copy():
         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
 
-
-def copy_texture(dict_attr):
+def get_project_path():
     '''
     Description:
-        Copy textures to the destination.
+        get current project path
     Parameters:
-        dict_attr is the class object dictionary
+        None
     Returns:
-        dict: Update Information on dictionary
+        string: current project path
     '''
-    file_texture_attribues = dict_attr
-
-    file_name = file_texture_attribues['name']
-    file_path = file_texture_attribues['file_texture_name']
-    file_existance = file_texture_attribues['file_exists']
-    new_destination = file_texture_attribues['new_file_path']
-    needs_move = file_texture_attribues['needs_move']
-
-    if file_existance == False:
-        logging.debug('The file has been lost. : {}'.format(file_name))
-        return
-
-    #If the file has relative path.
-    if new_destination is None:
-        logging.debug('The file already exists. : {}'.format(file_name))
-        return
-
-
-    #If the file exists, but it has absolute path.
-    if needs_move is False:
-        logging.info('The file already exists. : {}.'.format(file_name))
-        return
-
-
-    #If the file exists, and needs to be copied.
-    new_destination = '{}/{}'.format(get_project_path(), new_destination)
-    logging.debug('The file will be copied to the new_destination: {}.'.format(new_destination))
-    shutil.copy(file_path, new_destination)
-    logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
-
-
-def update_node_path(dict_attr):
-    file_texture_attribues = dict_attr
-
-    file_name = file_texture_attribues['name']
-    file_existance = file_texture_attribues['file_exists']
-    new_destination = file_texture_attribues['new_file_path']
-
-    if file_existance == False:
-        logging.info('The file has been lost. : {}'.format(file_name))
-        return
-
-    #If the file has relative path.
-    if new_destination is None:
-        logging.info('The file already exists. : {}'.format(file_name))
-        return
-
-    mc.setAttr('{}.{}'.format(file_name, 'fileTextureName'), new_destination, type='string')
-
-    return new_destination
-
-def log_summary(dict_attr):
-    if dict_attr['needs_move'] is True:
-        logger.info('File {} was COPIED to {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
-
-    if dict_attr['file_exist'] is False:
-        logger.info('File {} in node {} was not found.'.format(dict_attr['file_texture_name'], dict_attr['name']))
-
-    if dict_attr['new_file_path'] is not None:
-        logger.info('File {} has been updated to use a relative path: {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
-
+    project_path = mc.workspace(query=True, rootDirectory=True)
+    return project_path
 
 # Test code to run when calling module
 # example:
