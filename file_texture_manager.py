@@ -47,12 +47,12 @@ class FileNode(MayaNode):
         self.new_file_path = None
 
     # Ryan
-    def validate_path_location(dict_attr):
+    def validate_path_location(self):
         '''
         Description:
             validate if the file is relatively in sourceimages folder.
         Parameters:
-            dict_attr (dict): file_texture_attributes.
+            dict_attr (dict): file_texture_objects.
         Returns:
             dict: A dictionary of atttribtue name and value pairs ({attr:value}).
         '''
@@ -73,33 +73,33 @@ class FileNode(MayaNode):
         return dict_attr
 
     # Ryan
-    def validate_path_exist(dict_attr):
+    def validate_path_exist(self):
         '''
         Description:
-            validate if a single path exists and update dict_attr.
+            validate if a single path exists and update file_texture_object.
         Parameters:
-            dict_attr (dict): file_texture_attributes.
+            file_texture_object (dict): file_texture_objects.
         Returns:
             boolean: file exists or does not exist.
         '''
         # query the path from the dict
-        path = dict_attr['file_texture_name']
-        # if the path exists, update dict_attr
+        path = file_texture_object['file_texture_name']
+        # if the path exists, update file_texture_object
         if os.path.isfile(path):
-            dict_attr['file_exists'] = True
+            file_texture_object['file_exists'] = True
         else:
-            dict_attr['file_exists'] = False
-        logging.debug('{}\nfile_exists: {}'.format(path, dict_attr['file_exists']))
+            file_texture_object['file_exists'] = False
+        logging.debug('{}\nfile_exists: {}'.format(path, file_texture_object['file_exists']))
 
-        return dict_attr
+        return file_texture_object
 
     # Ji
-    def copy_texture(dict_attr):
+    def copy_texture(self):
         '''
         Description:
             Copy textures to the destination.
         Parameters:
-            dict_attr is the class object dictionary
+            file_texture_object is the class object dictionary
         Returns:
             dict: Update Information on dictionary
         '''
@@ -159,34 +159,6 @@ def get_file_textures():
     return file_texture_nodes
 
 
-# TODO: Create object to store attributes
-def get_file_texture_attributes(file_node):
-    '''
-    Description:
-        Gets node and file name from file node.
-    Parameters:
-        file_node (string): Name of the file node.
-    Returns:
-        dict: A dictionary of atttribtue name and value pairs ({attr:value}).
-    '''
-    logging.debug('file_node: {}'.format(file_node))
-    # TODO: Check file_node type and assert if not type fileNode
-
-    # Create dictionary of attributes from the maya file node
-    file_texture_attributes = dict({
-                            'name': file_node,
-                            'file_texture_name': mc.getAttr('{}.fileTextureName'.format(file_node)),
-                            'file_exists': False,
-                            'new_file_path': None,
-                            'needs_move': False
-                            })
-
-    # TODO: Possibly add other useful data such as connections to other nodes
-    logging.debug('file_texture_attributes: {}'.format(file_texture_attributes))
-
-    return file_texture_attributes
-
-
 def warn_copy():
     '''
     Description:
@@ -213,36 +185,50 @@ def get_project_path():
     project_path = mc.workspace(query=True, rootDirectory=True)
     return project_path
 
-# Test code to run when calling module
-# example:
-#   execfile('/Users/tmeade/Documents/python/maya/tools/file_texture_manager.py')
-if __name__ == "__main__":
+def manage_file_textures():
+    '''
+    Description:
+        Validates all file nodes in current scene, copies all files to current project and sets all
+        existing absolute paths to relative paths.
+    Parameters:
+        None
+    Returns:
+        list: validated file texture objects
+    '''
+
     # Get a list of all file texture nodes
-    file_texture_nodes = ftm.get_file_textures()
+    file_texture_nodes = get_file_textures()
 
-    # Build a list of dictionary that each contain attribte:value pairs on each node.
-    file_texture_attributes = list()
+    # Wrap each file node in an object
+    file_texture_objects = list()
     for node in file_texture_nodes:
-        file_texture_attributes.append(ftm.FileNode(node))
+        print 'Node: ', node
+        file_texture_objects.append(FileNode(node))
 
-    validated_attributes = list()
-    for attributes in file_texture_attributes:
-        ftm.validate_path_location(attributes)
-        validated_attributes.append(ftm.validate_path_exist(attributes))
+    validated_objects = list()
+    for object in file_texture_objects:
+        object.validate_path_location()
+        validated_objects.append(validate_path_exist(object))
 
     files_to_copy = list()
-    for attributes in validated_attributes:
-        if attributes['needs_move'] is True:
-            files_to_copy.append(attributes)
+    for object in validated_objects:
+        if object.needs_move is True:
+            files_to_copy.append(object)
 
     if files_to_copy:
-        ftm.warn_copy()
+        warn_copy()
 
-    for attributes in files_to_copy:
-        ftm.copy_texture(attributes)
+    for object in files_to_copy:
+        object.copy_texture()
 
-    for attributes in validated_attributes:
-        ftm.update_node_path(attributes)
+    for object in validated_objects:
+        object.update_node_path()
 
-    for attributes in :
-        ftm.log_summary(attributes)
+    for object in validated_objects:
+        log_summary(object)
+
+    return validated_objects
+
+
+if __name__ == "__main__":
+    manage_file_textures()
