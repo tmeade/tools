@@ -14,7 +14,7 @@ class MayaNode(object):
     def __init__(self, node=None):
         if node:
             self.node = node
-            self.get_attributes(node)
+            self.get_attributes()
             self.data = self.__dict__
 
     def __repr__(self):
@@ -23,10 +23,10 @@ class MayaNode(object):
     def __str__(self):
         return str(self.data)
 
-    def get_attributes(self, node):
-        for attribute in mc.listAttr(node, hasData=True):
+    def get_attributes(self):
+        for attribute in mc.listAttr(self.node, hasData=True):
             try:
-                value = mc.getAttr('{}.{}'.format(node, attribute))
+                value = mc.getAttr('{}.{}'.format(self.node, attribute))
                 setattr(self, attribute, value)
             except:
                 pass
@@ -35,8 +35,9 @@ class MayaNode(object):
         if attr:
             mc.setAttr(attr, value)
         else:
-            for k, v in self.data.items():
-                mc.setAttr(k, v)
+            for attribute, value in self.data.items():
+                print(attribute,value)
+                mc.setAttr('{}.{}'.format(self.node, attribute), value)
 
 
 class FileNode(MayaNode):
@@ -45,53 +46,48 @@ class FileNode(MayaNode):
         self.file_exists = False
         self.needs_move = False
         self.new_file_path = None
-
+        self.old_path = self.node.fileTextureName
     # Ryan
     def validate_path_location(self):
         '''
         Description:
             validate if the file is relatively in sourceimages folder.
-        Parameters:
-            dict_attr (dict): file_texture_objects.
         Returns:
-            dict: A dictionary of atttribtue name and value pairs ({attr:value}).
+            tuple: self.new_file_path and self.needs_move
         '''
-        path = dict_attr['file_texture_name']
-        file_name = os.path.basename(path)
+
+        file_name = os.path.basename(self.old_path)
         path_relative = 'sourceimages/{}'.format(file_name)
         path_absolute = '/{}'.format(path_relative)
 
         # if the path is not relative
-        if path is not path_relative:
-            dict_attr['new_file_path'] = path_relative
+        if self.old_path is not path_relative:
+            self.new_file_path = path_relative
             # if the file is not in sourceimages
-            if path_absolute not in path:
-                dict_attr['needs_move'] = True
-        logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(path, dict_attr['new_file_path'],
-                        dict_attr['needs_move']))
+            if path_absolute not in self.old_path:
+                self.needs_move = True
+        logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(self.old_path, self.new_file_path,
+                        self.needs_move))
 
-        return dict_attr
+        return (self.new_file_path, self.needs_move)
 
     # Ryan
     def validate_path_exist(self):
         '''
         Description:
             validate if a single path exists and update file_texture_object.
-        Parameters:
-            file_texture_object (dict): file_texture_objects.
         Returns:
             boolean: file exists or does not exist.
         '''
-        # query the path from the dict
-        path = file_texture_object['file_texture_name']
-        # if the path exists, update file_texture_object
-        if os.path.isfile(path):
-            file_texture_object['file_exists'] = True
-        else:
-            file_texture_object['file_exists'] = False
-        logging.debug('{}\nfile_exists: {}'.format(path, file_texture_object['file_exists']))
 
-        return file_texture_object
+        # if the path exists, update file_texture_object
+        if os.path.isfile(self.old_path):
+            self.file_exists = True
+        else:
+            self.file_exists = False
+        logging.debug('{}\nfile_exists: {}'.format(self.old_path, self.file_exists))
+
+        return self.file_exists
 
     # Ji
     def copy_texture(self):
