@@ -31,13 +31,14 @@ class MayaNode(object):
             except:
                 pass
 
-    def set_maya_attribute(self, attr=None, value=None):
+    def set_maya_attributes(self, attr=None, value=None):
+        maya_type = None
         if attr:
-            mc.setAttr(attr, value)
+            maya_type = mc.getAttr(attr, type=True)
+            mc.setAttr(str(attr), str(value), type=maya_type)
         else:
             for attribute, value in self.data.items():
-                print(attribute,value)
-                mc.setAttr('{}.{}'.format(self.node, attribute), value)
+                mc.setAttr('{}.{}'.format(self.node, attribute, value, type=maya_type))
 
 
 class FileNode(MayaNode):
@@ -46,7 +47,7 @@ class FileNode(MayaNode):
         self.file_exists = False
         self.needs_move = False
         self.new_file_path = None
-        self.old_path = self.node.fileTextureName
+        self.old_path = self.fileTextureName
     # Ryan
     def validate_path_location(self):
         '''
@@ -99,46 +100,31 @@ class FileNode(MayaNode):
         Returns:
             dict: Update Information on dictionary
         '''
-        file_texture_attribues = dict_attr
+        # Copy the file to the destination
+        msg = 'The file will be copied to the new_destination'
+        logging.debug('{} : {}.'.format(msg, self.new_file_path))
+        new_destination = '{}/{}'.format(get_project_path(), self.new_file_path)
+        shutil.copy(self.old_path, new_destination)
 
-        file_name = file_texture_attribues['name']
-        file_path = file_texture_attribues['file_texture_name']
-        file_existance = file_texture_attribues['file_exists']
-        new_destination = file_texture_attribues['new_file_path']
-        needs_move = file_texture_attribues['needs_move']
-
-        if file_existance is False:
-            logging.debug('The file has been lost. : {}'.format(file_name))
-            return
-
-        # If the file has relative path.
-        if new_destination is None:
-            logging.debug('The file already exists. : {}'.format(file_name))
-            return
-
-        mc.setAttr('{}.{}'.format(file_name, 'fileTextureName'), new_destination, type='string')
-
-        # If the file exists, but it has absolute path.
-        if needs_move is False:
-            logging.info('The file already exists. : {}.'.format(file_name))
-            return
-
-        # If the file exists, and needs to be copied.
-        new_destination = '{}/{}'.format(get_project_path(), new_destination)
-        logging.debug('The file will be copied to the new_destination: {}.'.format(new_destination))
-        shutil.copy(file_path, new_destination)
-        logging.info('The file has been copied from {} to {}.'.format(file_path, new_destination))
+        msg = 'The file has been copied from'
+        logging.debug('{} {} to {}.'.format(msg, self.old_path, self.new_file_path))
 
 # Mike
-def log_summary(dict_attr):
-    if dict_attr['needs_move'] is True:
-        logger.info('File {} was COPIED to {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
+    def log_summary(self):
+        if self.needs_move is True:
+            logger.info('File {} was COPIED to {}'.format(
+                self.fileTextureName,
+                self.new_file_path))
 
-    if dict_attr['file_exist'] is False:
-        logger.info('File {} in node {} was not found.'.format(dict_attr['file_texture_name'], dict_attr['name']))
+        if self.file_exists is False:
+            logger.info('File {} in node {} was not found.'.format(
+                self.fileTextureName,
+                self.node))
 
-    if dict_attr['new_file_path'] is not None:
-        logger.info('File {} has been updated to use a relative path: {}'.format(dict_attr['file_texture_name'], dict_attr['new_file_path']))
+        if self.new_file_path is not None:
+            logger.info('File {} has been updated to use a relative path: {}'.format(
+                self.fileTextureName,
+                self.new_file_path))
 
 
 def get_file_textures():
@@ -204,7 +190,8 @@ def manage_file_textures():
     validated_objects = list()
     for object in file_texture_objects:
         object.validate_path_location()
-        validated_objects.append(validate_path_exist(object))
+        if object.validate_path_exist():
+            validated_objects.append(object)
 
     files_to_copy = list()
     for object in validated_objects:
@@ -218,10 +205,10 @@ def manage_file_textures():
         object.copy_texture()
 
     for object in validated_objects:
-        object.update_node_path()
+        object.set_maya_attributes('{}.fileTextureName'.format(object.node), object.new_file_path)
 
     for object in validated_objects:
-        log_summary(object)
+        object.log_summary()
 
     return validated_objects
 
