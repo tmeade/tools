@@ -7,14 +7,15 @@ import logging
 import maya.cmds as mc
 
 logger = logging.getLogger(__name__)
-
+#t est visual stuido code
+#test again
 
 # Thomas
 class MayaNode(object):
     def __init__(self, node=None):
         if node:
             self.node = node
-            self.get_attributes()
+            self.get_ attributes()
             self.data = self.__dict__
 
     def __repr__(self):
