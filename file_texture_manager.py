@@ -5,6 +5,7 @@ import os.path
 import shutil
 import logging
 import maya.cmds as mc
+import pymel.core as pm
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +32,13 @@ class MayaNode(object):
             except:
                 pass
 
-    def set_maya_attributes(self, attr=None, value=None):
-        maya_type = None
-        if attr:
-            maya_type = mc.getAttr(attr, type=True)
-            mc.setAttr(str(attr), str(value), type=maya_type)
+    def set_maya_attributes(self, attribute=None, value=None):
+        if attribute:
+            get_type_and_set_attribute(self.node, attribute, value)
         else:
             for attribute, value in self.data.items():
-                mc.setAttr('{}.{}'.format(self.node, attribute, value, type=maya_type))
+                get_type_and_set_attribute(self.node, attribute, value)
+
 
 
 class FileNode(MayaNode):
@@ -155,6 +155,7 @@ def warn_copy():
         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
 
+
 def get_project_path():
     '''
     Description:
@@ -166,6 +167,17 @@ def get_project_path():
     '''
     project_path = mc.workspace(query=True, rootDirectory=True)
     return project_path
+
+
+def get_type_and_set_attribute(node, attribute, value):
+    print 'ATTRIBUTE: ', attribute
+    node_obj = pm.PyNode(node)
+    maya_type = node_obj.attr(attribute).get(type=True)
+    if isinstance(value, list):
+        value = value[0]
+    node_obj.attr(attribute).set(value, type=maya_type)
+    # mc.setAttr('{}.{}'.format(node, attribute), value, type=maya_type)
+
 
 def manage_file_textures():
     '''
@@ -205,7 +217,7 @@ def manage_file_textures():
         object.copy_texture()
 
     for object in validated_objects:
-        object.set_maya_attributes('{}.fileTextureName'.format(object.node), object.new_file_path)
+        object.set_maya_attributes()  # 'fileTextureName', object.new_file_path)
 
     for object in validated_objects:
         object.log_summary()
