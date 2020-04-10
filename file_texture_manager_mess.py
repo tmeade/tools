@@ -24,26 +24,32 @@ class MayaNode(object):
     def __str__(self):
         return str(self.data)
 
-
+    """
+    Getting...all the attributes the node has......
+    theory 1 : Check if it's locked. If it's not, break the connection, set the value, and reconnect it.
+    Result = 'FileNode' object has no attribute 'fileTextureName' / newly created attributes
+    """
     # Problem = setAttr: The attribute 'file1.noiseUV' is locked or connected and cannot be modified.
     def get_attributes(self):
         for attribute in mc.listAttr(self.node, hasData=True):
+            #if we get rid of try and except...
+            #Error: ValueError: file <maya console> line 37: No object matches name: file1.explicitUvTiles.explicitUvTileName
+            #explicitUvTiles and explicitUvTiles.explicitUvTileName are both listed but the latter one doesn't work with getAttr..
+            #pyMel...?
             try:
                 value = mc.getAttr('{}.{}'.format(self.node, attribute))
                 setattr(self, attribute, value)
             except:
                 pass
-    """
-    theory 1 : Check if it's locked. If it's not, break the connection, set the value, and reconnect it.
-    Result = 'FileNode' object has no attribute 'fileTextureName'
-    """
+
+    #everything happens at else block...
     def set_maya_attributes(self, attribute=None, value=None):
         if attribute:
-            print('flag 7')
+            print('if attribute')
             get_type_and_set_attribute(self.node, attribute, value)
         else:
             for attribute, value in self.data.items():
-                print('flag 8')
+                print('else')
                 get_type_and_set_attribute(self.node, attribute, value)
 
 
@@ -191,7 +197,7 @@ def get_type_and_set_attribute(node, attribute, value):
 def get_type_and_set_attribute(node, attribute, value):
     print 'ATTRIBUTE: ', attribute
     node_obj = pm.PyNode(node)
-    print ('here1')
+    print ('def get_type_and_set_attribute(node, attribute, value):')
     print '{}.{}'.format(node, attribute)
 
     if mc.attributeQuery(attribute, node=node, exists=True):
