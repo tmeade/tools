@@ -170,13 +170,31 @@ def get_project_path():
 
 
 def get_type_and_set_attribute(node, attribute, value):
-    print 'ATTRIBUTE: ', attribute
     node_obj = pm.PyNode(node)
-    maya_type = node_obj.attr(attribute).get(type=True)
+
+    # try if attr exists in node or a custom attr
+    try:
+        # create a PyNode attribute obj
+        attr_obj = node_obj.attr(attribute)
+    except AttributeError as err:
+        logging.info(err)
+        return
+
+    # check if attr_obj can be modified
+    if (not attr_obj.isFreeToChange()) or (not attr_obj.isSettable()):
+        logging.debug('{} cannot be modified'.format(attribute))
+        return
+
+    # check if attr value is a list
     if isinstance(value, list):
         value = value[0]
-    node_obj.attr(attribute).set(value, type=maya_type)
-    # mc.setAttr('{}.{}'.format(node, attribute), value, type=maya_type)
+
+    # try setting attr value
+    try:
+        attr_obj.set(value)
+    except RuntimeError as err:
+        logging.info(err)
+        return
 
 
 def manage_file_textures():
