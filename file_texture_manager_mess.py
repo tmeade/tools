@@ -196,7 +196,7 @@ def get_type_and_set_attribute(node, attribute, value):
 
     if mc.attributeQuery(attribute, node=node, exists=True):
         maya_type = node_obj.attr(attribute).get(type=True)
-        
+
         if isinstance(value, list):
             value = value[0]
             attr = '{}.{}'.format(node, attribute)
@@ -227,19 +227,16 @@ def manage_file_textures():
     file_texture_objects = list()
     for node in file_texture_nodes:
         print 'Node: ', node
-        print 'flag 1'
         file_texture_objects.append(FileNode(node))#node = file node
 
     validated_objects = list()
     for object in file_texture_objects:
-        print 'flag 2'
         object.validate_path_location()
         if object.validate_path_exist():
             validated_objects.append(object)
 
     files_to_copy = list()
     for object in validated_objects:
-        print 'flag 3'
         if object.needs_move is True:
             files_to_copy.append(object)
 
@@ -247,16 +244,13 @@ def manage_file_textures():
         warn_copy()
 
     for object in files_to_copy:
-        print 'flag 4'
         object.copy_texture()
 
     for object in validated_objects:
-        print 'flag 5'
         #Error happens. setAttr: The attribute 'file1.noiseUV' is locked or connected and cannot be modified. #
         object.set_maya_attributes()  # 'fileTextureName', object.new_file_path)
 
     for object in validated_objects:
-        print 'flag 6'
         object.log_summary()
 
     return validated_objects
