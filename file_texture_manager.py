@@ -10,7 +10,6 @@ import pymel.core as pm
 logger = logging.getLogger(__name__)
 
 
-# Thomas
 class MayaNode(object):
     def __init__(self, node=None):
         if node:
@@ -29,16 +28,15 @@ class MayaNode(object):
             try:
                 value = mc.getAttr('{}.{}'.format(self.node, attribute))
                 setattr(self, attribute, value)
-            except:
-                pass
+            except ValueError as err:
+                logging.error(err)
 
     def set_maya_attributes(self, attribute=None, value=None):
         if attribute:
-            get_type_and_set_attribute(self.node, attribute, value)
+            set_maya_attribute(self.node, attribute, value)
         else:
             for attribute, value in self.data.items():
-                get_type_and_set_attribute(self.node, attribute, value)
-
+                set_maya_attribute(self.node, attribute, value)
 
 
 class FileNode(MayaNode):
@@ -48,7 +46,7 @@ class FileNode(MayaNode):
         self.needs_move = False
         self.new_file_path = None
         self.old_path = self.fileTextureName
-    # Ryan
+
     def validate_path_location(self):
         '''
         Description:
@@ -67,12 +65,13 @@ class FileNode(MayaNode):
             # if the file is not in sourceimages
             if path_absolute not in self.old_path:
                 self.needs_move = True
-        logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(self.old_path, self.new_file_path,
-                        self.needs_move))
+        logging.debug('{}\nnew_file_path: {}\nneeds_move:{}'.format(
+                                                            self.old_path,
+                                                            self.new_file_path,
+                                                            self.needs_move))
 
         return (self.new_file_path, self.needs_move)
 
-    # Ryan
     def validate_path_exist(self):
         '''
         Description:
@@ -90,7 +89,6 @@ class FileNode(MayaNode):
 
         return self.file_exists
 
-    # Ji
     def copy_texture(self):
         '''
         Description:
@@ -152,7 +150,7 @@ def warn_copy():
     '''
     answer = mc.confirmDialog(title='Confirm Copying Files',
         message='Please, check your memory capacity is enough for files.\nDo you want to proceed?',
-        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+        button=['Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
     return answer
 
 
@@ -169,7 +167,7 @@ def get_project_path():
     return project_path
 
 
-def get_type_and_set_attribute(node, attribute, value):
+def set_maya_attribute(node, attribute, value):
     node_obj = pm.PyNode(node)
 
     # try if attr exists in node or a custom attr
@@ -192,6 +190,7 @@ def get_type_and_set_attribute(node, attribute, value):
     # try setting attr value
     try:
         attr_obj.set(value)
+        logging.info('Set attribute {} to {}'.format(attr_obj, value))
     except RuntimeError as err:
         logging.info(err)
         return
@@ -214,7 +213,6 @@ def manage_file_textures():
     # Wrap each file node in an object
     file_texture_objects = list()
     for node in file_texture_nodes:
-        print 'Node: ', node
         file_texture_objects.append(FileNode(node))
 
     validated_objects = list()
