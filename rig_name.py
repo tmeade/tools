@@ -18,6 +18,7 @@ class NameBase(object):
     def __init__(self, name=None):
         self.name = name
         self.validate()
+        self.cleanup()
 
     def __str__(self):
         return str(self.name)
@@ -48,7 +49,6 @@ class Side(NameBase):
 class Base(NameBase):
     def __init__(self, name):
         super(Base, self).__init__(name)
-        self.cleanup()
 
     def validate(self):
         assert isinstance(self.name, str), 'Base name must be an string!'
@@ -63,7 +63,19 @@ class Region(NameBase):
 
 
 class Position(NameBase):
-    pass
+    def __init__(self, name, padding=1):
+        self.padding = padding
+        super(Position, self).__init__(name)
+
+    def validate(self):
+        try:
+            int(self.name)
+            assert isinstance(self.name, (int, str)), 'Position must be an integer or string!'
+        except (ValueError, AssertionError), e:
+            print 'Position must be a numnerical!', e
+
+    def cleanup(self):
+        self.name = '{value:0{pad}d}'.format(value=int(self.name), pad=self.padding)
 
 
 class NodeType(NameBase):
