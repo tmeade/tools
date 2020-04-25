@@ -100,7 +100,7 @@ class Name(NameBase):
 
     def validate(self):
         # This should validate each item passed in to see if it is either a proper object type or
-        # validate it's input.
+        # validate its input.
         #
         # We should be able to validate self.name on it's own so that the  user could type in a
         # complete string name without having to set all of the variables?
