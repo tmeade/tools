@@ -22,14 +22,14 @@ class PublishAnimationUI(QtWidgets.QDialog):
         super(PublishAnimationUI, self).__init__(parent)
         self.publish_data = publish_data
 
-        self.windowTitle('Publish Animation')
+        #self.windowTitle = 'Publish Animation'
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
         self.main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_layout)
         self.create_ui()
 
     def create_ui(self):
-        self.ui = QtUiTools.QUiLoader().load('/Users/tmeade/Documents/python/maya/tools/pubilsh_window.ui')
+        self.ui = QtUiTools.QUiLoader().load('/Users/tmeade/Documents/python/maya/tools/publish_animation/pubilsh_window.ui')
         self.main_layout.addWidget(self.ui)
         self.ui.publish_btn.clicked.connect(self.slot_publish_clicked)
         self.ui.close_btn.clicked.connect(self.slot_close)
@@ -96,44 +96,3 @@ class PublishItemWidget(QtWidgets.QWidget):
             self.publish_data.publish = True
         else:
             self.publish_data.publish = False
-
-
-
-
-if __name__ == '__main__':
-    import maya.cmds as mc
-
-    publishable_items = list()
-    for item in mc.ls(type='locator'):
-        if mc.attributeQuery('asset_name', node=item, exists=True):
-            publishable_items.append(item)
-
-    logging.info('publishable_items: {}'.format(publishable_items))
-
-    publish_data = list()
-    for item in publish_data:
-        asset_name = mc.getAttr('{}.asset_name'.format(item))
-        rig_version = mc.getAttr('{}.rig_version'.format(item))
-        publish_data.append(PublishData(asset_name=asset_name, rig_version=rig_version))
-
-    logging.info('publishable_data: {}'.format(publish_data))
-
-    try:
-        win.close()
-    except:
-        logging.info('Launching window....')
-
-    win = PublishAnimationUI(publish_data=publish_data)
-    win.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-    win.show()
-
-# import maya.cmds as mc
-# import random
-#
-# ASSETS = ['bilbo', 'frodo', 'gandalf', 'warg', 'aragorn']
-# for asset in ASSETS:
-#     loc = mc.createNode('locator', name=asset)
-#     mc.addAttr(asset, dataType='string', longName='asset_name')
-#     mc.setAttr('{}.asset_name'.format(asset), asset, type='string')
-#     mc.addAttr(asset, dataType='string', longName='rig_version')
-#     mc.setAttr('{}.rig_version'.format(asset), random.randint(1,50), type='string')
