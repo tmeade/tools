@@ -40,7 +40,6 @@ class PublishAnimationUI(QtWidgets.QDialog):
             self.ui.char_lw.addItem(item_widget)
 
             publish_widget = PublishItemWidget(publish_data=data)
-            self.ui.char_lw.addItem(item_widget)
             self.ui.char_lw.setItemWidget(item_widget, publish_widget)
             item_widget.setSizeHint(publish_widget.sizeHint())
 
