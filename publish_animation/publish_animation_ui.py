@@ -44,7 +44,8 @@ class PublishAnimationUI(QtWidgets.QDialog):
             item_widget.setSizeHint(publish_widget.sizeHint())
 
     def slot_publish_clicked(self):
-        go_publish(self.publish_data)
+        print self.publish_data
+        #go_publish(self.publish_data)
 
     def slot_close(self):
         self.close()
